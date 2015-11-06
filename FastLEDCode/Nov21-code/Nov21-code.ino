@@ -25,7 +25,7 @@
 #define UPDATES_PER_SECOND 100
 
 CRGB leds[NUM_LEDS];
-
+uint8_t agents_here[NUM_LEDS];
 CRGBPalette16 currentPalette;
 TBlendType    currentBlending;
 
@@ -54,7 +54,8 @@ void setup() {
 
      randomSeed(analogRead(0));
   randomSeed(analogRead(random(0, 7)));
-
+for(int i = 0; i< NUM_LEDS;i++)
+  agents_here[i]=0;
   for (int i = 0; i < NUM_AGENTS; i++)
   {
     int8_t junk = random(1, 6);
@@ -82,7 +83,7 @@ void loop()
     
   //  FillLEDsFromPaletteColors( startIndex);
       draw_agents();
-      clear_agents();
+   // clear_agents();
       move_agents();
       
    // FastLED.show();
@@ -193,6 +194,7 @@ void init_agent(struct agent_s* toinit, CRGB color1, int16_t posi, uint8_t dir, 
 {
   toinit->color1 = color1;
   toinit->pos = posi;
+  agents_here[posi]++;
   toinit->dir = dir;
   toinit->waited = 0;
   toinit->max_wait = maxw;
@@ -245,7 +247,7 @@ void clear_agents()
   for (int i = 0; i < NUM_AGENTS; i++)
   {
     if(agents[i].agent_type == AGENT_CLASSIC) leds[agents[i].pos]=CRGB::Black;//, 0, 0, 0);
-    if(agents[i].agent_type == AGENT_COMET) 
+  /*  if(agents[i].agent_type == AGENT_COMET) 
     {
       leds[agents[i].pos]=CRGB::Black;
       //strip.setPixelColor(agents[i].pos, 0, 0, 0);
@@ -263,7 +265,8 @@ void clear_agents()
            leds[agents[i].pos+j]=CRGB::Black;//, 0, 0, 0);
          }
       }
-    }
+    }*/
+  
   }
 }
 
@@ -278,20 +281,23 @@ void move_agent(struct agent_s* toupdate)
 {
   if (toupdate->waited == toupdate->max_wait)
   {
-    
+    agents_here[toupdate->pos]--;
     toupdate->pos += toupdate->dir;
     while (toupdate->pos < 0)
       toupdate->pos += NUM_LEDS;
     toupdate->pos %= NUM_LEDS;
-
+    agents_here[toupdate->pos]++;
     /* collision detection. may or may not work */
+    
     for (int i = 0; i < NUM_AGENTS; i++)
     {
 
       if (agents[i].pos == toupdate->pos && (sameDirection(&agents[i], toupdate) ))
       {
         toupdate->dir *= -1;
+        agents_here[toupdate->pos]--;
         toupdate->pos = (toupdate->pos + 1) % NUM_LEDS;
+        agents_here[toupdate->pos]++;
       }
     }
 
@@ -311,7 +317,11 @@ void draw_agents()
   for (int i = 0; i < NUM_AGENTS; i++)
     leds[agents[i].pos]=agents[i].color1;
   //  strip.setPixelColor(agents[i].pos, agents[i].rgb[0], agents[i].rgb[1], agents[i].rgb[2]);
-
+  for(int i = 0; i < NUM_LEDS; i++)
+  {
+     if(agents_here[i] == 0)
+      leds[i]=CRGB::Black;
+  }
   FastLED.show();
  // strip.show();
 }
