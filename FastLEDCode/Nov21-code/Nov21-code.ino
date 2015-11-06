@@ -34,6 +34,8 @@ struct agent_s {
   uint8_t agent_type;
   CRGB color1; // Primary RGB color
   CRGB color2; // Secondary RGB color
+  CRGBPalette16 palette;//palette (if using)
+  uint8_t col_index; // where in the palette we are. 
   int16_t pos; // Position (literal or seed)
   uint8_t span; // Width or pixel count
   int8_t dir; // Direction (signed)
@@ -44,32 +46,35 @@ struct agent_s {
 struct agent_s agents[NUM_AGENTS];
 
 void setup() {
-    delay( 3000 ); // power-up safety delay
-   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
-    FastLED.setBrightness(  BRIGHTNESS );
+
+  //Set up the LEDs
+  delay( 3000 ); // power-up safety delay
+  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+  FastLED.setBrightness(  BRIGHTNESS );
     
-    currentPalette = CloudColors_p;  
-    currentBlending = LINEARBLEND;
-
-
-     randomSeed(analogRead(0));
+  //set up random numbers
+  randomSeed(analogRead(0));
   randomSeed(analogRead(random(0, 7)));
-for(int i = 0; i< NUM_LEDS;i++)
-  agents_here[i]=0;
+
+  currentPalette = RainbowColors_p;
+    currentBlending = LINEARBLEND;
+    
+  for(int i = 0; i< NUM_LEDS;i++)
+    agents_here[i]=0;
   for (int i = 0; i < NUM_AGENTS; i++)
   {
-    int8_t junk = random(1, 6);
-    if (junk > 3)
-      junk =  - 1;
+    int8_t rdir = random(1, 6); //randomize directions
+    if (rdir > 3)
+      rdir =  - 1;
     else
-      junk = 1;
-    int otherjunk = random(1, 10);
-    if (otherjunk < 3)
-      init_agent(&agents[i], CRGB::Red, random(0, NUM_LEDS), junk, random(6, 20), NULL);
-    else if (otherjunk < 6)
-      init_agent(&agents[i], CRGB::HotPink, random(0, NUM_LEDS), junk, random(14, 20), NULL);
-    else
-      init_agent(&agents[i], CRGB::Violet, random(0, NUM_LEDS), junk, random(20, 27), NULL);
+      rdir = 1;
+    
+   
+      uint16_t pos = random(0, NUM_LEDS);
+      init_agent(&agents[i], RainbowColors_p, 1, pos, rdir, 0, NULL);
+      
+    
+  
   }
 }
 
@@ -83,11 +88,10 @@ void loop()
     
   //  FillLEDsFromPaletteColors( startIndex);
       draw_agents();
-   // clear_agents();
       move_agents();
-      
+      update_agent_colors();
    // FastLED.show();
-    FastLED.delay(1000 / UPDATES_PER_SECOND);
+    FastLED.delay(1000 / 10);//UPDATES_PER_SECOND);
 }
 
 void FillLEDsFromPaletteColors( uint8_t colorIndex)
@@ -189,7 +193,9 @@ void SetupPBGPalette()
                                    
 }
 
-
+/****
+ * Basic, initialize an agent that just has a color 
+ */
 void init_agent(struct agent_s* toinit, CRGB color1, int16_t posi, uint8_t dir, uint8_t maxw, void *fptr)
 {
   toinit->color1 = color1;
@@ -200,6 +206,31 @@ void init_agent(struct agent_s* toinit, CRGB color1, int16_t posi, uint8_t dir, 
   toinit->max_wait = maxw;
   toinit->span = 1;
   toinit->agent_type = AGENT_CLASSIC;
+
+  //not using palette make it null
+  toinit->palette = NULL;
+  toinit->col_index=0;
+}
+
+/****
+ * Initialize an agent that uses a palette
+ */
+void init_agent(struct agent_s* toinit, CRGBPalette16 palette, uint8_t col_index, int16_t posi, uint8_t dir, uint8_t maxw, void *fptr)
+{
+  toinit->palette = palette;
+  toinit->col_index = col_index;
+  toinit->color1 = ColorFromPalette( palette, col_index, BRIGHTNESS, currentBlending);
+  toinit->pos = posi;
+  agents_here[posi]++;
+  toinit->dir = dir;
+  toinit->waited = 0;
+  toinit->max_wait = maxw;
+  toinit->span = 1;
+  toinit->agent_type = AGENT_CLASSIC;
+
+  //not using palette make it null
+  toinit->palette = NULL;
+  toinit->col_index=0;
 }
 
 void reverse_agent_dir(struct agent_s* toset)
@@ -227,48 +258,18 @@ void set_agent_pos(struct agent_s* toset, int16_t pos)
   toset->pos = pos;
 } 
 
-/*void set_agent_rgb(struct agent_s* toset, uint8_t red, uint8_t blue, uint8_t green)
+void update_agent_colors()
 {
-  toset->rgb[0] = red;
-  toset->rgb[1] = blue;
-  toset->rgb[2] = green;
-} 
-
-void set_agent_rgb2(struct agent_s* toset, uint8_t red, uint8_t blue, uint8_t green)
-{
-  toinit->rgb2[0] = red;
-  toinit->rgb2[1] = blue;
-  toinit->rgb2[2] = green;
-} 
-*/
-
-void clear_agents()
-{
-  for (int i = 0; i < NUM_AGENTS; i++)
+  for(int i = 0; i < NUM_AGENTS; i++)
   {
-    if(agents[i].agent_type == AGENT_CLASSIC) leds[agents[i].pos]=CRGB::Black;//, 0, 0, 0);
-  /*  if(agents[i].agent_type == AGENT_COMET) 
+    if(agents[i].palette != NULL)
     {
-      leds[agents[i].pos]=CRGB::Black;
-      //strip.setPixelColor(agents[i].pos, 0, 0, 0);
-      if(agents[i].dir > 0)
-      {
-         for(int j = 1; j < agents[i].span; j++)
-         {
-           leds[agents[i].pos-j]=CRGB::Black;//, 0, 0, 0);
-         }
-      }
-      else
-      {
-         for(int j = 1; j < agents[i].span; j++)
-         {
-           leds[agents[i].pos+j]=CRGB::Black;//, 0, 0, 0);
-         }
-      }
-    }*/
-  
+      agents[i].col_index+=3;
+      agents[i].color1 = ColorFromPalette( agents[i].palette, agents[i].col_index, BRIGHTNESS, currentBlending);
+    }
   }
 }
+
 
 void move_agents()
 {
@@ -289,7 +290,7 @@ void move_agent(struct agent_s* toupdate)
     agents_here[toupdate->pos]++;
     /* collision detection. may or may not work */
     
-    for (int i = 0; i < NUM_AGENTS; i++)
+    /*for (int i = 0; i < NUM_AGENTS; i++)
     {
 
       if (agents[i].pos == toupdate->pos && (sameDirection(&agents[i], toupdate) ))
@@ -300,7 +301,7 @@ void move_agent(struct agent_s* toupdate)
         agents_here[toupdate->pos]++;
       }
     }
-
+*/
     toupdate->waited = 0;
   }
   else
