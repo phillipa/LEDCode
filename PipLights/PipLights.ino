@@ -24,14 +24,71 @@ Adafruit_NeoPixel strip = Adafruit_NeoPixel(NUM_LEDS, PIN, NEO_GRB + NEO_KHZ800)
 #define DEFAULT_MAXVAL 128
 /*wandering agents*/
 struct agent_s {
-  uint8_t rgb[3];
-  int16_t pos;
-  int8_t dir;
-  uint8_t waited;
-  uint8_t max_wait;
-  void *my_function;
-  uint8_t params[5];
+  uint8_t agent_type;
+  uint8_t rgb[3]; // Primary RGB color
+  uint8_t rgb2[3]; // Secondary RGB color
+  int16_t pos; // Position (literal or seed)
+  uint8_t span; // Width or pixel count
+  int8_t dir; // Direction (signed)
+  uint16_t waited; // State counter for wait
+  uint16_t max_wait;  // Max wait
 };
+
+#define AGENT_DISABLED 0
+#define AGENT_CLASSIC 1
+#define AGENT_COMET 2
+
+void init_agent(struct agent_s* toinit, uint8_t red, uint8_t blue, uint8_t green, int16_t posi, uint8_t dir, uint8_t maxw, void *fptr)
+{
+  toinit->rgb[0] = red;
+  toinit->rgb[1] = blue;
+  toinit->rgb[2] = green;
+  toinit->pos = posi;
+  toinit->dir = dir;
+  toinit->waited = 0;
+  toinit->max_wait = maxw;
+  toinit->span = 1;
+  toinit->agent_type = AGENT_CLASSIC;
+}
+
+void reverse_agent_dir(struct agent_s* toset)
+{
+  toset->dir = -toset->dir;
+} 
+
+void set_agent_dir(struct agent_s* toset, int8_t dir)
+{
+  toset->dir = dir;
+} 
+
+void set_agent_type(struct agent_s* toset, uint8_t atype)
+{
+  toset->agent_type = atype;
+} 
+
+void set_agent_span(struct agent_s* toset, uint8_t span)
+{
+  toset->span = span;
+} 
+
+void set_agent_pos(struct agent_s* toset, int16_t pos)
+{
+  toset->pos = pos;
+} 
+
+void set_agent_rgb(struct agent_s* toset, uint8_t red, uint8_t blue, uint8_t green)
+{
+  toset->rgb[0] = red;
+  toset->rgb[1] = blue;
+  toset->rgb[2] = green;
+} 
+
+void set_agent_rgb2(struct agent_s* toset, uint8_t red, uint8_t blue, uint8_t green)
+{
+  toinit->rgb2[0] = red;
+  toinit->rgb2[1] = blue;
+  toinit->rgb2[2] = green;
+} 
 
 /* pip flash */
 struct flash_s {
@@ -93,29 +150,11 @@ void setup() {
   init_flash(&flashes[3],  true, true,  random(150, 300), 0, 255, 255, 16);
   init_flash(&flashes[4],  true, false,  random(150, 300), 0, 0, 255, 16);
   init_flash(&flashes[5],  true, true,  random(150, 300), 255, 0, 255, 16);
-
-
-
-
 }
 
 int next;
 void loop() {
-
-  /* broken shit
-  for (int i = 0; i < NUM_FLASHES; i++)
-    update_flash(&flashes[i]);
-
-  for (int i = 0; i < NUM_FLASHES; i++)
-    draw_flash(&flashes[i]); //flashes will undraw themselves when they are dead
-
-  strip.show();
-
-  */
   rainbowsAndAgents();
-
-
-
 }
 
 /** the random rainbows, agents and dance break program**/
@@ -132,7 +171,7 @@ void rainbowsAndAgents()
   }
   else if (action < 45)
   {
-    for (int i = 0; i < 1500; i++)
+    for (int i = 0; i < 15000; i++)
     {
       draw_agents();
       clear_agents();
@@ -179,8 +218,29 @@ void danceBreak()
 void clear_agents()
 {
   for (int i = 0; i < NUM_AGENTS; i++)
-    strip.setPixelColor(agents[i].pos, 0, 0, 0);
+  {
+    if(agents[i].agent_type == AGENT_CLASSIC) strip.setPixelColor(agents[i].pos, 0, 0, 0);
+    if(agents[i].agent_type == AGENT_COMET) 
+    {
+      strip.setPixelColor(agents[i].pos, 0, 0, 0);
+      if(agents[i].dir > 0)
+      {
+         for(int j = 1; j < agents[i].span; j++)
+         {
+           strip.setPixelColor(agents[i].pos-j, 0, 0, 0);
+         }
+      }
+      else
+      {
+         for(int j = 1; j < agents[i].span; j++)
+         {
+           strip.setPixelColor(agents[i].pos+j, 0, 0, 0);
+         }
+      }
+    }
+  }
 }
+
 void move_agents()
 {
   for (int i = 0; i < NUM_AGENTS; i++)
@@ -276,17 +336,6 @@ void draw_flash(struct flash_s* me)
   randomSeed(analogRead(0));
   randomSeed(analogRead(random(0, 7)));
 
-}
-void init_agent(struct agent_s* toinit, uint8_t red, uint8_t blue, uint8_t green, int16_t posi, uint8_t dir, uint8_t maxw, void *fptr)
-{
-  toinit->rgb[0] = red;
-  toinit->rgb[1] = blue;
-  toinit->rgb[2] = green;
-  toinit->pos = posi;
-  toinit->dir = dir;
-  toinit->waited = 0;
-  toinit->max_wait = maxw;
-  toinit->my_function = fptr;
 }
 
 void move_agent(struct agent_s* toupdate)
