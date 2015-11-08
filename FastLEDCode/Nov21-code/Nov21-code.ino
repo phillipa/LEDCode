@@ -12,11 +12,13 @@
 #include <Adafruit_NeoPixel.h>
 #include <avr/power.h>
 #include <stdint.h>
+#include <Time.h>  
 #include "agents.h"
+#include "ad_clock.h"
 #include "ad_palettes.h"
 #define DATA_PIN     17
 #define NUM_LEDS    114
-#define BRIGHTNESS  32 //took brightness down by 32 PG
+#define BRIGHTNESS  64 //took brightness down by 32 PG
 
 
 #define NUM_AGENTS 50
@@ -36,7 +38,10 @@ void setup() {
   delay( 3000 ); // power-up safety delay
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
   FastLED.setBrightness(  BRIGHTNESS );
-    
+  for(int i = 0; i < NUM_LEDS;i++) //make them all black
+  leds[i]=CRGB::Black;
+  FastLED.show();
+  
   //set up random numbers
   randomSeed(analogRead(0));
   randomSeed(analogRead(random(0, 7)));
@@ -58,14 +63,25 @@ void setup() {
 }
 
 
+
 void loop()
 {
-  ChangePalettePeriodically();
+
+  //cycle through the palettes
+ // ChangePalettePeriodically();
   static uint8_t startIndex = 0;
   startIndex = startIndex + 1; //motion speed 
-  FillLEDsFromPaletteColors( startIndex); 
+ /* FillLEDsFromPaletteColors( startIndex); 
+  */
+
   
+  uint8_t start_index = 60;
   
+  plotBinTime(startIndex);
+ // plotFracTime();
+  
+  FastLED.show();
+
   
   //30 agents in palette of blue/green/purple move randomly
  /* draw_agents();
@@ -73,12 +89,82 @@ void loop()
   move_agents();*/
   
   
-  FastLED.delay(1000 / UPDATES_PER_SECOND);
+  FastLED.delay(1000 / 2);// UPDATES_PER_SECOND);
   }
 
+/**
+ * Plots time using binary numbers repeating over the strip
+ * Currently reads time from start of code.
+ * TODO: get real time data.
+ * TODO: see if this is too dislexic
+ * shows second-minute-hour (L->R)
+ * MSB is on RHS vs. LHS. Debate/change later.
+ */
+void plotBinTime(uint8_t palette_index)
+{
+  int curr_index = 0;
+  
+  while(curr_index < NUM_LEDS)
+  {
+    plotNumber(second(),curr_index,6,
+        ColorFromPalette( purplegreen, palette_index, BRIGHTNESS, currentBlending), 
+        ColorFromPalette( greenpurple, palette_index, BRIGHTNESS, currentBlending));
+    curr_index+=6;
+    
+    plotNumber(minute(),curr_index,6,CRGB::Lime, CRGB::BlueViolet);
+    curr_index+=6;
+    plotNumber(hour(),curr_index,4,CRGB::DarkViolet, CRGB::Chartreuse);
+    curr_index+=4;
+  }
+}
+
+void plotNumber(int num, int start_index, int num_bits,CRGB one, CRGB zero)
+{
+  for(int i = num_bits-1; i >=0; i--)
+  {
+    if((num>>i)&0x01)
+      leds[start_index+i] = one;
+    else
+      leds[start_index+i] = zero;
+  }
+
+
+}
+
+/** Plot time as seconds,minutes,hours.
+ *  fractional divided by 2 (ie., renormalize seconds, minutes by 30 and hours by 12 instead of 24)
+ *  to fit on the strip...
+ */
+void plotFracTime()
+{
+  int curr_index = 0;
+  while(curr_index < (NUM_LEDS+72)) //allow partial clock as long as whole clock isn't outside of strip
+  {
+    uint8_t seconds = second()>>1;
+    uint8_t minutes=minute()>>1;
+    uint8_t hours =hour()>>1;
+    plotXofY(curr_index+0,seconds,30,CRGB::Blue,CRGB::White);
+    plotXofY(curr_index+30,minutes,30,CRGB::Red, CRGB::Black);
+    plotXofY(curr_index+60,hours,12,CRGB::Purple, CRGB::Yellow);
+    curr_index+=72;
+  
+  }
+}
+
+void plotXofY(int start_index, int num_on, int num_bits,CRGB one, CRGB zero)
+{
+  for(int i = 0; i < num_on; i++)
+   leds[start_index+i]=one;
+
+  if(num_on < num_bits)
+  {
+    for(int i = num_on; i<num_bits;i++)
+      leds[start_index+i] = zero;
+  }
+}
 void FillLEDsFromPaletteColors( uint8_t colorIndex)
 {
-    uint8_t brightness = 255;
+    uint8_t brightness = BRIGHTNESS;
     
     for( int i = 0; i < NUM_LEDS; i++) {
         leds[i] = ColorFromPalette( currentPalette, colorIndex, brightness, currentBlending);

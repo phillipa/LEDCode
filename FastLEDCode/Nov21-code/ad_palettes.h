@@ -33,6 +33,16 @@ CRGBPalette16 adbasic = CRGBPalette16(
                                    green,  purepurple,  purepurple,  purepurple,
                                    blue, blue, green,  green );
 
+CRGBPalette16 purplegreen = CRGBPalette16(darkmagenta,darkorchid,darkviolet,mediumorchid,
+                                          mediumpurple,purple,blueviolet,blue,
+                                          blue,blue,chartreuse, green,
+                                          chartreuse,yellowgreen, lime,chartreuse);
+
+CRGBPalette16 greenpurple = CRGBPalette16(chartreuse,lime,yellowgreen,chartreuse,
+                                          green,chartreuse,blue,blue,
+                                          blue,blueviolet,purple, mediumpurple,
+                                          mediumpurple,darkviolet, darkorchid,darkmagenta);                           
+                            
 CRGBPalette16 purples = CRGBPalette16(
                                     darkmagenta, darkmagenta, darkorchid, darkorchid,
                                     darkviolet, darkviolet, fuchsia, fuchsia,
@@ -50,4 +60,15 @@ CRGBPalette16 greens = CRGBPalette16(
                                     green, green, chartreuse, chartreuse,
                                     yellowgreen, yellowgreen, chartreuse, chartreuse,
                                     limegreen, limegreen, lime, lime);
+//palette for 'on'/'off' position of 'seconds' in clock
+CRGBPalette16 secondone = CRGBPalette16(
+                                    CRGB::DarkViolet, CRGB::DarkViolet, CRGB::Blue, CRGB::Blue,
+                                       CRGB::DarkViolet, CRGB::DarkViolet, CRGB::Blue, CRGB::Blue,
+                                       CRGB::DarkViolet, CRGB::DarkViolet, CRGB::Blue, CRGB::Blue,
+                                      CRGB::DarkViolet, CRGB::DarkViolet, CRGB::Blue, CRGB::Blue);
+CRGBPalette16 secondzero = CRGBPalette16(
+                                    CRGB::Blue, CRGB::Blue, CRGB::DarkViolet, CRGB::DarkViolet,
+                                         CRGB::Blue, CRGB::Blue, CRGB::DarkViolet, CRGB::DarkViolet,
+                                         CRGB::Blue, CRGB::Blue, CRGB::DarkViolet, CRGB::DarkViolet,
+                                        CRGB::Blue, CRGB::Blue, CRGB::DarkViolet, CRGB::DarkViolet);
                                     
