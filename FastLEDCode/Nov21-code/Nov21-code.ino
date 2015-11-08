@@ -12,36 +12,21 @@
 #include <Adafruit_NeoPixel.h>
 #include <avr/power.h>
 #include <stdint.h>
+#include "agents.h"
+#include "ad_palettes.h"
 #define DATA_PIN     17
 #define NUM_LEDS    114
-#define BRIGHTNESS  64
+#define BRIGHTNESS  32 //took brightness down by 32 PG
 
-/* Different types of agent */
-#define AGENT_DISABLED 0
-#define AGENT_CLASSIC 1
-#define AGENT_COMET 2
 
-#define NUM_AGENTS 30
+#define NUM_AGENTS 50
 #define UPDATES_PER_SECOND 100
 
 CRGB leds[NUM_LEDS];
 uint8_t agents_here[NUM_LEDS];
-CRGBPalette16 currentPalette;
-TBlendType    currentBlending;
 
-/*wandering agents*/
-struct agent_s {
-  uint8_t agent_type;
-  CRGB color1; // Primary RGB color
-  CRGB color2; // Secondary RGB color
-  CRGBPalette16 palette;//palette (if using)
-  uint8_t col_index; // where in the palette we are. 
-  int16_t pos; // Position (literal or seed)
-  uint8_t span; // Width or pixel count
-  int8_t dir; // Direction (signed)
-  uint16_t waited; // State counter for wait
-  uint16_t max_wait;  // Max wait
-};
+CRGBPalette16 currentPalette; //assign before palette color grabbing
+TBlendType    currentBlending;
 
 struct agent_s agents[NUM_AGENTS];
 
@@ -56,11 +41,11 @@ void setup() {
   randomSeed(analogRead(0));
   randomSeed(analogRead(random(0, 7)));
 
-  currentPalette = RainbowColors_p;
-    currentBlending = LINEARBLEND;
+  
+  currentPalette = adbasic; //basic ad colors
+  currentBlending = LINEARBLEND;
     
-  for(int i = 0; i< NUM_LEDS;i++)
-    agents_here[i]=0;
+  //Initialize some agents
   for (int i = 0; i < NUM_AGENTS; i++)
   {
     int8_t rdir = random(1, 6); //randomize directions
@@ -68,31 +53,28 @@ void setup() {
       rdir =  - 1;
     else
       rdir = 1;
-    
-   
-      uint16_t pos = random(0, NUM_LEDS);
-      init_agent(&agents[i], RainbowColors_p, 1, pos, rdir, 0, NULL);
-      
-    
-  
+      init_agent(&agents[i], currentPalette, random(1,256), random(0, NUM_LEDS), rdir, 4, NULL);
   }
 }
 
 
 void loop()
 {
-    /*ChangePalettePeriodically();
-    
-    static uint8_t startIndex = 0;
-    startIndex = startIndex + 1; /* motion speed */
-    
-  //  FillLEDsFromPaletteColors( startIndex);
-      draw_agents();
-      move_agents();
-      update_agent_colors();
-   // FastLED.show();
-    FastLED.delay(1000 / 10);//UPDATES_PER_SECOND);
-}
+  ChangePalettePeriodically();
+  static uint8_t startIndex = 0;
+  startIndex = startIndex + 1; //motion speed 
+  FillLEDsFromPaletteColors( startIndex); 
+  
+  
+  
+  //30 agents in palette of blue/green/purple move randomly
+ /* draw_agents();
+  FastLED.show();
+  move_agents();*/
+  
+  
+  FastLED.delay(1000 / UPDATES_PER_SECOND);
+  }
 
 void FillLEDsFromPaletteColors( uint8_t colorIndex)
 {
@@ -122,46 +104,21 @@ void ChangePalettePeriodically()
         lastSecond = secondHand;
        // if( secondHand ==  0)  { currentPalette = RainbowColors_p;         currentBlending = LINEARBLEND; }
       //  if( secondHand == 10)  { currentPalette = RainbowStripeColors_p;   currentBlending = NOBLEND;  }
-       // if( secondHand == 15)  { currentPalette = RainbowStripeColors_p;   currentBlending = LINEARBLEND; }
-        if( secondHand == 20)  { SetupPurpleAndGreenPalette();             currentBlending = LINEARBLEND; }
-     if( secondHand == 25)  { SetupPurpleAndGreenPalette();             currentBlending = NOBLEND; }
-       // if( secondHand == 25)  { SetupTotallyRandomPalette();              currentBlending = LINEARBLEND; }
-        if( secondHand == 30)  { SetupPBGPalette();       currentBlending = NOBLEND; }
-        if( secondHand == 35)  { SetupBlackAndWhiteStripedPalette();       currentBlending = LINEARBLEND; }
-        if( secondHand == 40)  { currentPalette = CloudColors_p;           currentBlending = LINEARBLEND; }
-  if( secondHand == 45)  { SetupPBGPalette();       currentBlending = LINEARBLEND; }
-      //  if( secondHand == 45)  { currentPalette = PartyColors_p;           currentBlending = LINEARBLEND; }
+        if( secondHand == 15)  { currentPalette = darkpurples;   currentBlending = LINEARBLEND; }
+  if( secondHand == 30)  { currentPalette = adbasic;       currentBlending = LINEARBLEND; }
+        if( secondHand == 45)  { currentPalette = greens;           currentBlending = LINEARBLEND; }
      //   if( secondHand == 50)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = NOBLEND;  }
       //  if( secondHand == 55)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = LINEARBLEND; }
     }
 }
 
-// This function fills the palette with totally random colors.
-void SetupTotallyRandomPalette()
-{
-    for( int i = 0; i < 16; i++) {
-        currentPalette[i] = CHSV( random8(), 255, random8());
-    }
-}
 
-// This function sets up a palette of black and white stripes,
-// using code.  Since the palette is effectively an array of
-// sixteen CRGB colors, the various fill_* functions can be used
-// to set them up.
-void SetupBlackAndWhiteStripedPalette()
-{
-    // 'black out' all 16 palette entries...
-    fill_solid( currentPalette, 16, CRGB::Black);
-    // and set every fourth one to white.
-    currentPalette[0] = CRGB::White;
-    currentPalette[4] = CRGB::White;
-    currentPalette[8] = CRGB::White;
-    currentPalette[12] = CRGB::White;
-    
-}
 
-// This function sets up a palette of purple and green stripes.
-void SetupPurpleAndGreenPalette()
+/****
+ * Basic set of purple/blue/green/black/white
+ * reasonably bright
+ **/
+CRGBPalette16 SetupADPalette1()
 {
     CRGB purple = CHSV( HUE_PURPLE, 255, 255);
     CRGB green  = CHSV( HUE_GREEN, 255, 255);
@@ -169,29 +126,17 @@ void SetupPurpleAndGreenPalette()
     CRGB blue = CHSV( HUE_BLUE, 255,255);
     CRGB white = CRGB::White;
     
-    currentPalette = CRGBPalette16(
-                                   green,  green,  blue ,  blue,
-                                   purple, purple, black,  black,
-                                   green,  green,  white,  white,
-                                   purple, purple, black,  black );
-}
-
-// This function sets up a palette of purple blue and green.
-void SetupPBGPalette()
-{
-    CRGB purple = CHSV( HUE_PURPLE, 255, 255);
-    CRGB green  = CHSV( HUE_GREEN, 255, 255);
-    CRGB black  = CRGB::Black;
-    CRGB blue = CHSV( HUE_BLUE, 255,255);
-    CRGB white = CRGB::White;
-    
-    currentPalette = CRGBPalette16(
+    return CRGBPalette16(
                                    purple,  purple,  purple ,  purple,
                                    blue, blue, blue,  green,
                                    green,  purple,  purple,  purple,
                                    blue, blue, green,  green );
-                                   
+                                  
 }
+                                  
+                                   
+
+
 
 /****
  * Basic, initialize an agent that just has a color 
@@ -258,18 +203,38 @@ void set_agent_pos(struct agent_s* toset, int16_t pos)
   toset->pos = pos;
 } 
 
-void update_agent_colors()
+void update_agents_colors()
 {
   for(int i = 0; i < NUM_AGENTS; i++)
-  {
-    if(agents[i].palette != NULL)
-    {
-      agents[i].col_index+=3;
-      agents[i].color1 = ColorFromPalette( agents[i].palette, agents[i].col_index, BRIGHTNESS, currentBlending);
-    }
-  }
+    update_agent_color(&agents[i]);
 }
 
+/***** This doesn't work 
+
+For some reason ColorFromPalette bars when I try to update. 
+If I give it a palette directly its ok modulo the below issue. (e.g., RainbowColors_p)
+
+For some reason all the agents end up in lock step for color
+even if they start off with different colors. 
+
+If I try to set palette in the agent to be RainbowColors and pass the palette
+in to the ColorFromPalette function they end up all in lock step +
+iterating through blue/purple/white (at least for RainbowColors palette).
+
+******/
+
+void update_agent_color(struct agent_s* toupdate)
+{
+   if(toupdate->palette != NULL)
+    {
+      CRGBPalette16 palette = toupdate->palette;
+      toupdate->col_index = toupdate->col_index + 1;
+      uint8_t tmp = toupdate->col_index;
+     // currentPalette = toupdate->palette;
+      toupdate->color1 = ColorFromPalette(palette, tmp, BRIGHTNESS, currentBlending);
+    
+    }
+}
 
 void move_agents()
 {
@@ -323,9 +288,10 @@ void draw_agents()
      if(agents_here[i] == 0)
       leds[i]=CRGB::Black;
   }
-  FastLED.show();
- // strip.show();
+  
+ 
 }
+
 
 
 // This example shows how to set up a static color palette
