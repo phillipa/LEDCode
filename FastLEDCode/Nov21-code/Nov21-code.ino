@@ -69,19 +69,18 @@ void loop()
 
   //cycle through the palettes
  // ChangePalettePeriodically();
+ 
   static uint8_t startIndex = 0;
   startIndex = startIndex + 1; //motion speed 
- /* FillLEDsFromPaletteColors( startIndex); 
-  */
+  FillLEDsFromPaletteColors( startIndex); 
+  
 
-  
-  uint8_t start_index = 60;
-  
+  /* //clock stuff
+  uint8_t start_index = 60; 
   plotBinTime(startIndex);
  // plotFracTime();
-  
   FastLED.show();
-
+*/
   
   //30 agents in palette of blue/green/purple move randomly
  /* draw_agents();
@@ -89,7 +88,7 @@ void loop()
   move_agents();*/
   
   
-  FastLED.delay(1000 / 2);// UPDATES_PER_SECOND);
+  FastLED.delay(1000 / UPDATES_PER_SECOND);
   }
 
 /**
@@ -188,12 +187,13 @@ void ChangePalettePeriodically()
     
     if( lastSecond != secondHand) {
         lastSecond = secondHand;
-       // if( secondHand ==  0)  { currentPalette = RainbowColors_p;         currentBlending = LINEARBLEND; }
-      //  if( secondHand == 10)  { currentPalette = RainbowStripeColors_p;   currentBlending = NOBLEND;  }
-        if( secondHand == 15)  { currentPalette = darkpurples;   currentBlending = LINEARBLEND; }
+       if( secondHand ==  0)  { currentPalette = adbasic;         currentBlending = LINEARBLEND; }
+        if( secondHand == 5)  { currentPalette = purplegreen;   currentBlending = NOBLEND;  }
+       if( secondHand == 10)  { currentPalette = greenpurple;   currentBlending = LINEARBLEND;  }
+        if( secondHand == 15)  { currentPalette = adbasic;   currentBlending = LINEARBLEND; }
   if( secondHand == 30)  { currentPalette = adbasic;       currentBlending = LINEARBLEND; }
         if( secondHand == 45)  { currentPalette = greens;           currentBlending = LINEARBLEND; }
-     //   if( secondHand == 50)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = NOBLEND;  }
+       if( secondHand == 50)  { currentPalette = purples; currentBlending = NOBLEND;  }
       //  if( secondHand == 55)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = LINEARBLEND; }
     }
 }
