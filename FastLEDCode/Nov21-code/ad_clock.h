@@ -10,3 +10,5 @@ struct clock_s {
 };
 
 void plotNumber(int num, int start_index, int num_bits,CRGB one, CRGB zero);
+
+void setUpTimeAgents();

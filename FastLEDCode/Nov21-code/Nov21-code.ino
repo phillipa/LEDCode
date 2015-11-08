@@ -21,7 +21,7 @@
 #define BRIGHTNESS  64 //took brightness down by 32 PG
 
 
-#define NUM_AGENTS 50
+#define NUM_AGENTS 0
 #define UPDATES_PER_SECOND 100
 
 CRGB leds[NUM_LEDS];
@@ -31,6 +31,11 @@ CRGBPalette16 currentPalette; //assign before palette color grabbing
 TBlendType    currentBlending;
 
 struct agent_s agents[NUM_AGENTS];
+
+//1 agent for every two sec/min/hour 
+struct agent_s second_agents[30];
+struct agent_s minute_agents[30];
+struct agent_s hour_agents[12];
 
 void setup() {
 
@@ -60,6 +65,9 @@ void setup() {
       rdir = 1;
       init_agent(&agents[i], currentPalette, random(1,256), random(0, NUM_LEDS), rdir, 4, NULL);
   }
+
+  setUpTimeAgents();
+
 }
 
 
@@ -68,15 +76,22 @@ void loop()
 {
 
   //cycle through the palettes
- // ChangePalettePeriodically();
- 
+ /* ChangePalettePeriodically();
   static uint8_t startIndex = 0;
   startIndex = startIndex + 1; //motion speed 
   FillLEDsFromPaletteColors( startIndex); 
-  plotNegBinTime();
   FastLED.show();
+  */
 
-  /* //clock stuff
+  //negative space clock. removes pixels based on time 
+  //overlaid on cool wipe. this one looks good.
+ /* static uint8_t startIndex = 0;
+  startIndex = startIndex + 1; //motion speed 
+  FillLEDsFromPaletteColors( startIndex); 
+  plotNegBinTime();
+  FastLED.show(); */
+
+  /* //clock stuff doesn't look great yet
   uint8_t start_index = 60; 
   plotBinTime(startIndex);
  // plotFracTime();
@@ -87,11 +102,130 @@ void loop()
  /* draw_agents();
   FastLED.show();
   move_agents();*/
+
+  FastLED.show();
+  plotAgentTime();
   
   
   FastLED.delay(1000 / UPDATES_PER_SECOND);
   }
 
+
+void plotAgentTime()
+{
+ 
+    uint8_t seconds = second()>>1;
+    uint8_t minutes=minute()>>1;
+    uint8_t hours =hour()>>1;
+
+   for(int i = 0; i<30 ;i++)
+  {
+    if(i < seconds)
+    {
+      if(second_agents[i].color1 == black)
+      {
+      second_agents[i].color1 = ColorFromPalette( darkpurples, random(1,256), BRIGHTNESS, currentBlending);
+      agents_here[second_agents[i].pos]++;
+      }
+      move_agent(&second_agents[i]);
+    }
+ else if(second_agents[i].color1 != black)
+      {
+        second_agents[i].color1 = black;
+        agents_here[second_agents[i].pos]--;
+        
+      }
+
+    if(i < minutes)
+    {
+     if(minute_agents[i].color1 == black)
+      {
+      minute_agents[i].color1 = CRGB::Blue;
+      agents_here[minute_agents[i].pos]++;
+      
+      }
+      move_agent(&minute_agents[i]);
+    }
+     else if(minute_agents[i].color1 != black)
+      {
+        minute_agents[i].color1 = black;
+        agents_here[minute_agents[i].pos]--;
+        
+      }
+    
+  }
+  for(int i = 0; i < 12; i++)
+  {
+      if(i<hours)
+      {
+       if(hour_agents[i].color1 == black)
+      {
+      hour_agents[i].color1 = ColorFromPalette( greens, random(1,256), BRIGHTNESS, currentBlending);
+      agents_here[hour_agents[i].pos]++;
+      
+      }
+      move_agent(&hour_agents[i]);
+      }
+      else if(hour_agents[i].color1 != black)
+      {
+        hour_agents[i].color1 = black;
+        agents_here[hour_agents[i].pos]--;
+        
+      }
+  }
+
+   for (int i = 0; i < 30; i++)
+   {
+    if(second_agents[i].color1!=black)
+      leds[second_agents[i].pos]=second_agents[i].color1;
+   }
+   for (int i = 0; i < 30; i++)
+   {
+   if(minute_agents[i].color1!=black)
+    leds[minute_agents[i].pos]=minute_agents[i].color1; 
+   }
+   for (int i = 0; i < 12; i++)
+   {
+    if(hour_agents[i].color1!=black)
+    leds[hour_agents[i].pos]=hour_agents[i].color1;
+   }  
+    
+  for(int i = 0; i < NUM_LEDS; i++)
+  {
+     if(agents_here[i] == 0)
+      leds[i]=CRGB::Black;
+  }
+   
+  
+}
+
+
+void setUpTimeAgents()
+{
+  for(int i = 0 ; i < 30; i++)
+  {
+    int8_t rdir = random(1, 6); //randomize directions
+    if (rdir > 3)
+      rdir =  - 1;
+    else
+      rdir = 1;
+      //second agents move faster than minute agents
+      init_agent(&second_agents[i], ColorFromPalette( darkpurples, random(1,256), BRIGHTNESS, currentBlending), random(0, NUM_LEDS), rdir, 2, NULL);
+      init_agent(&minute_agents[i], CRGB::Blue, random(0, NUM_LEDS), rdir, 4, NULL);
+  }
+    for(int i = 0 ; i < 12; i++)
+  {
+    int8_t rdir = random(1, 6); //randomize directions
+    if (rdir > 3)
+      rdir =  - 1;
+    else
+      rdir = 1;
+      //hour agents move slower again
+      init_agent(&hour_agents[i], ColorFromPalette( greens, random(1,256), BRIGHTNESS, currentBlending), random(0, NUM_LEDS), rdir, 8, NULL);
+      
+   }
+}
+/******************* START BINARY CLOCK FUNCTIONS *******************/
 /**
  * Plots time using binary numbers repeating over the strip
  * Currently reads time from start of code.
@@ -117,7 +251,6 @@ void plotBinTime(uint8_t palette_index)
     curr_index+=4;
   }
 }
-
 //plot the time with 'one' values as black and leave other values alone
 void plotNegBinTime()
 {
@@ -135,7 +268,6 @@ void plotNegBinTime()
     curr_index+=4;
   }
 }
-
 void plotNumber(int num, int start_index, int num_bits,CRGB one, CRGB zero)
 {
   for(int i = num_bits-1; i >=0; i--)
@@ -162,7 +294,7 @@ void plotNumber(int num, int start_index, int num_bits,CRGB one)
 
 
 }
-
+/******************* END BINARY CLOCK FUNCTIONS *******************/
 
 /** Plot time as seconds,minutes,hours.
  *  fractional divided by 2 (ie., renormalize seconds, minutes by 30 and hours by 12 instead of 24)

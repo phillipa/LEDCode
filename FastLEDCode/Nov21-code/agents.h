@@ -12,7 +12,7 @@
 struct agent_s {
   uint8_t agent_type;
   CRGB color1; // Primary RGB color
-  CRGB color2; // Secondary RGB color
+ // CRGB color2; // Secondary RGB color
   CRGBPalette16 palette;//palette (if using)
   uint8_t col_index; // where in the palette we are. 
   int16_t pos; // Position (literal or seed)
