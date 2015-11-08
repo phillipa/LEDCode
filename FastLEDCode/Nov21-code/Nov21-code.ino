@@ -104,14 +104,16 @@ void loop()
   move_agents();*/
 
   FastLED.show();
-  plotAgentTime();
+  plotAgentTime(true); //stealthy ie., with palette
   
   
   FastLED.delay(1000 / UPDATES_PER_SECOND);
   }
 
 
-void plotAgentTime()
+//stealth = false --> black background
+//stealth = true --> palette background
+void plotAgentTime(boolean stealth)
 {
  
     uint8_t seconds = second()>>1;
@@ -193,7 +195,12 @@ void plotAgentTime()
   for(int i = 0; i < NUM_LEDS; i++)
   {
      if(agents_here[i] == 0)
-      leds[i]=CRGB::Black;
+     {
+      if(stealth)
+      leds[i]=ColorFromPalette( adbasic, i, BRIGHTNESS, currentBlending);
+      else
+      leds[i]=black;
+      
   }
    
   
