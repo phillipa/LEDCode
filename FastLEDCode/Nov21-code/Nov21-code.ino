@@ -73,7 +73,8 @@ void loop()
   static uint8_t startIndex = 0;
   startIndex = startIndex + 1; //motion speed 
   FillLEDsFromPaletteColors( startIndex); 
-  
+  plotNegBinTime();
+  FastLED.show();
 
   /* //clock stuff
   uint8_t start_index = 60; 
@@ -117,6 +118,24 @@ void plotBinTime(uint8_t palette_index)
   }
 }
 
+//plot the time with 'one' values as black and leave other values alone
+void plotNegBinTime()
+{
+  int curr_index = 0;
+  
+  while(curr_index < NUM_LEDS)
+  {
+    plotNumber(second(),curr_index,6,
+        CRGB::Black);
+    curr_index+=6;
+    
+    plotNumber(minute(),curr_index,6,CRGB::Black);
+    curr_index+=6;
+    plotNumber(hour(),curr_index,4,CRGB::Black);
+    curr_index+=4;
+  }
+}
+
 void plotNumber(int num, int start_index, int num_bits,CRGB one, CRGB zero)
 {
   for(int i = num_bits-1; i >=0; i--)
@@ -124,11 +143,26 @@ void plotNumber(int num, int start_index, int num_bits,CRGB one, CRGB zero)
     if((num>>i)&0x01)
       leds[start_index+i] = one;
     else
-      leds[start_index+i] = zero;
+    {
+      
+       leds[start_index+i] = zero;
+    }
+  }
+
+}
+//same as prev but doesn't plot 0's
+void plotNumber(int num, int start_index, int num_bits,CRGB one)
+{
+  for(int i = num_bits-1; i >=0; i--)
+  {
+    if((num>>i)&0x01)
+      leds[start_index+i] = one;
+  
   }
 
 
 }
+
 
 /** Plot time as seconds,minutes,hours.
  *  fractional divided by 2 (ie., renormalize seconds, minutes by 30 and hours by 12 instead of 24)
