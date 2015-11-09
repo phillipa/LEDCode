@@ -32,10 +32,17 @@ TBlendType    currentBlending;
 
 struct agent_s agents[NUM_AGENTS];
 
+/*** Agents and palettes for agent clock ***/
 //1 agent for every two sec/min/hour 
 struct agent_s second_agents[30];
 struct agent_s minute_agents[30];
 struct agent_s hour_agents[12];
+
+CRGBPalette16 secpalette = darkpurples;
+CRGBPalette16 minpalette = yellows;//whites;//blues;
+CRGBPalette16 hourpalette = whites;//greens;
+CRGBPalette16 bgpalette = abasic;//adbasic;
+/*** end agent clock stuff ***/
 
 void setup() {
 
@@ -85,13 +92,36 @@ void loop()
 
   //negative space clock. removes pixels based on time 
   //overlaid on cool wipe. this one looks good.
- /* static uint8_t startIndex = 0;
+  if(second() < 20) //negative space clock
+  {
+  static uint8_t startIndex = 0;
   startIndex = startIndex + 1; //motion speed 
   FillLEDsFromPaletteColors( startIndex); 
   plotNegBinTime();
-  FastLED.show(); */
+  FastLED.show(); 
+  }
+   else if(second() < 40) //gothyclock
+ {
+  secpalette = darkpurples;
+ minpalette = blues;
+ hourpalette = greens;
+ bgpalette = adbasic;
+  FastLED.show();
+  plotAgentTime(true); //stealthy ie., with palette
+ }
+ else //arlene clock
+ {
+  secpalette = darkpurples;
+ minpalette = yellows;//whites;//blues;
+ hourpalette = whites;//greens;
+ bgpalette = abasic;//adbasic;
+   FastLED.show();
+  plotAgentTime(true); //stealthy ie., with palette
+ }
 
-  /* //clock stuff doesn't look great yet
+ FastLED.delay(1000 / UPDATES_PER_SECOND);
+
+   /* //clock stuff doesn't look great yet
   uint8_t start_index = 60; 
   plotBinTime(startIndex);
  // plotFracTime();
@@ -102,12 +132,8 @@ void loop()
  /* draw_agents();
   FastLED.show();
   move_agents();*/
-
-  FastLED.show();
-  plotAgentTime(true); //stealthy ie., with palette
   
   
-  FastLED.delay(1000 / UPDATES_PER_SECOND);
   }
 
 
@@ -116,94 +142,92 @@ void loop()
 void plotAgentTime(boolean stealth)
 {
  
-    uint8_t seconds = second()>>1;
-    uint8_t minutes=minute()>>1;
-    uint8_t hours =hour()>>1;
-
-   for(int i = 0; i<30 ;i++)
+  uint8_t seconds = second()>>1;
+  uint8_t minutes=minute()>>1;
+  uint8_t hours =hour(); //don't divide hour by 2
+  hours %= 12;//12 hour time.
+  
+  for(int i = 0; i<30 ;i++)
   {
     if(i < seconds)
     {
       if(second_agents[i].color1 == black)
       {
-      second_agents[i].color1 = ColorFromPalette( darkpurples, random(1,256), BRIGHTNESS, currentBlending);
-      agents_here[second_agents[i].pos]++;
+        second_agents[i].color1 = ColorFromPalette( secpalette, random(1,256), BRIGHTNESS, currentBlending);
+        agents_here[second_agents[i].pos]++;
       }
       move_agent(&second_agents[i]);
     }
- else if(second_agents[i].color1 != black)
-      {
-        second_agents[i].color1 = black;
-        agents_here[second_agents[i].pos]--;
-        
-      }
+    else if(second_agents[i].color1 != black)
+    {
+      second_agents[i].color1 = black;
+      agents_here[second_agents[i].pos]--;
+    }
 
     if(i < minutes)
     {
-     if(minute_agents[i].color1 == black)
+      if(minute_agents[i].color1 == black)
       {
-      minute_agents[i].color1 = CRGB::Blue;
+      minute_agents[i].color1 = ColorFromPalette( minpalette, random(1,256), BRIGHTNESS, currentBlending);
       agents_here[minute_agents[i].pos]++;
-      
       }
       move_agent(&minute_agents[i]);
     }
-     else if(minute_agents[i].color1 != black)
-      {
-        minute_agents[i].color1 = black;
-        agents_here[minute_agents[i].pos]--;
-        
-      }
-    
-  }
-  for(int i = 0; i < 12; i++)
-  {
-      if(i<hours)
-      {
-       if(hour_agents[i].color1 == black)
-      {
-      hour_agents[i].color1 = ColorFromPalette( greens, random(1,256), BRIGHTNESS, currentBlending);
-      agents_here[hour_agents[i].pos]++;
-      
-      }
-      move_agent(&hour_agents[i]);
-      }
-      else if(hour_agents[i].color1 != black)
-      {
-        hour_agents[i].color1 = black;
-        agents_here[hour_agents[i].pos]--;
-        
-      }
-  }
+    else if(minute_agents[i].color1 != black)
+    {
+      minute_agents[i].color1 = black;
+      agents_here[minute_agents[i].pos]--;
+    }
 
-   for (int i = 0; i < 30; i++)
-   {
-    if(second_agents[i].color1!=black)
-      leds[second_agents[i].pos]=second_agents[i].color1;
-   }
-   for (int i = 0; i < 30; i++)
-   {
-   if(minute_agents[i].color1!=black)
-    leds[minute_agents[i].pos]=minute_agents[i].color1; 
-   }
-   for (int i = 0; i < 12; i++)
-   {
-    if(hour_agents[i].color1!=black)
-    leds[hour_agents[i].pos]=hour_agents[i].color1;
-   }  
-    
-  for(int i = 0; i < NUM_LEDS; i++)
-  {
-     if(agents_here[i] == 0)
-     {
-      if(stealth)
-      leds[i]=ColorFromPalette( adbasic, i, BRIGHTNESS, currentBlending);
-      else
-      leds[i]=black;
-      
   }
-   
-  
+for(int i = 0; i < 12; i++)
+{
+if(i<hours)
+{
+if(hour_agents[i].color1 == black)
+{
+hour_agents[i].color1 = ColorFromPalette( hourpalette, random(1,256), BRIGHTNESS, currentBlending);
+agents_here[hour_agents[i].pos]++;
+
+}
+move_agent(&hour_agents[i]);
+}
+else if(hour_agents[i].color1 != black)
+{
+hour_agents[i].color1 = black;
+agents_here[hour_agents[i].pos]--;
+
+}
+}
+
+for (int i = 0; i < 30; i++)
+{
+if(second_agents[i].color1!=black)
+leds[second_agents[i].pos]=second_agents[i].color1;
+}
+for (int i = 0; i < 30; i++)
+{
+if(minute_agents[i].color1!=black)
+leds[minute_agents[i].pos]=minute_agents[i].color1; 
+}
+for (int i = 0; i < 12; i++)
+{
+if(hour_agents[i].color1!=black)
+leds[hour_agents[i].pos]=hour_agents[i].color1;
+}  
+
+for(int i = 0; i < NUM_LEDS; i++)
+{
+if(agents_here[i] == 0)
+{
+if(stealth)
+leds[i]=ColorFromPalette( bgpalette, i, BRIGHTNESS, currentBlending);
+else
+leds[i]=black;
+
+}
+
+} 
 }
 
 
@@ -217,8 +241,8 @@ void setUpTimeAgents()
     else
       rdir = 1;
       //second agents move faster than minute agents
-      init_agent(&second_agents[i], ColorFromPalette( darkpurples, random(1,256), BRIGHTNESS, currentBlending), random(0, NUM_LEDS), rdir, 2, NULL);
-      init_agent(&minute_agents[i], CRGB::Blue, random(0, NUM_LEDS), rdir, 4, NULL);
+      init_agent(&second_agents[i], ColorFromPalette( secpalette, random(1,256), BRIGHTNESS, currentBlending), random(0, NUM_LEDS), rdir, 2, NULL);
+      init_agent(&minute_agents[i], ColorFromPalette( minpalette, random(1,256), BRIGHTNESS, currentBlending), random(0, NUM_LEDS), rdir, 4, NULL);
   }
     for(int i = 0 ; i < 12; i++)
   {
@@ -228,7 +252,7 @@ void setUpTimeAgents()
     else
       rdir = 1;
       //hour agents move slower again
-      init_agent(&hour_agents[i], ColorFromPalette( greens, random(1,256), BRIGHTNESS, currentBlending), random(0, NUM_LEDS), rdir, 8, NULL);
+      init_agent(&hour_agents[i], ColorFromPalette( hourpalette, random(1,256), BRIGHTNESS, currentBlending), random(0, NUM_LEDS), rdir, 8, NULL);
       
    }
 }
@@ -366,7 +390,7 @@ void ChangePalettePeriodically()
         if( secondHand == 15)  { currentPalette = adbasic;   currentBlending = LINEARBLEND; }
   if( secondHand == 30)  { currentPalette = adbasic;       currentBlending = LINEARBLEND; }
         if( secondHand == 45)  { currentPalette = greens;           currentBlending = LINEARBLEND; }
-       if( secondHand == 50)  { currentPalette = purples; currentBlending = NOBLEND;  }
+       if( secondHand == 50)  { currentPalette = pinks; currentBlending = NOBLEND;  }
       //  if( secondHand == 55)  { currentPalette = myRedWhiteBluePalette_p; currentBlending = LINEARBLEND; }
     }
 }
