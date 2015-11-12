@@ -45,7 +45,7 @@ AgentClock::AgentClock(CRGBPalette16 p_sec_palette, CRGBPalette16 p_min_palette,
   }
 }
 
-void AgentClock::drawagentclock(uint8_t agents_here[], CRGB leds[], boolean stealth, CRGBPalette16 bgpalette)
+void AgentClock::drawagentclock(uint8_t agents_here[], CRGB leds[], boolean stealth, CRGBPalette16 bgpalette, uint8_t start_index)
 {
   uint8_t seconds = second() >> 1;
   uint8_t minutes = minute() >> 1;
@@ -68,7 +68,15 @@ void AgentClock::drawagentclock(uint8_t agents_here[], CRGB leds[], boolean stea
     if (agents_here[i] == 0)
     {
       if (stealth)
+      {
+        if(start_index >= 0 )
+        {
+        leds[i] = ColorFromPalette( bgpalette, start_index, brightness, blending);
+        start_index += 2; 
+        }
+        else 
         leds[i] = ColorFromPalette( bgpalette, i, brightness, blending);
+      }
       else
         leds[i] = CRGB::Black;
 
@@ -87,6 +95,31 @@ void AgentClock::drawagents(CRGB leds[], Agent agents[], uint8_t max_i)
       leds[agents[i].pos] = agents[i].color;
   }
 
+}
+
+//call this to fix agent colors when switching palettes
+void AgentClock::recoloragents()
+{
+    uint8_t seconds = second() >> 1;
+    uint8_t minutes = minute() >> 1;
+    uint8_t hours = hour(); //don't divide hour by 2
+
+   updateagentscolor(seconds, sec_agents, sec_palette, SECMIN);
+   updateagentscolor(minutes, min_agents, min_palette, SECMIN);
+   updateagentscolor(hours, hour_agents, hour_palette, 24);
+}
+
+void AgentClock::updateagentscolor(uint8_t live, Agent agents[], 
+                                CRGBPalette16 palette, uint8_t max_i)
+{
+  for(int i = 0; i < max_i ; i++)
+  {
+   if (i < live)
+        agents[i].color = ColorFromPalette( palette, random(1, 256), brightness, blending);
+    else if (agents[i].color != (CRGB)CRGB::Black)
+        agents[i].color = CRGB::Black;
+
+  }
 }
 
 void AgentClock::updateagents(uint8_t live, Agent agents[], uint8_t agents_here[], 

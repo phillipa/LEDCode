@@ -16,29 +16,35 @@
 #include "agent.h"
 #include "agent_clock.h"
 #include "ad_palettes.h"
+#include "binary_clock.h"
 
 
 
 //other definitions
 #define DATA_PIN     17
 #define NUM_LEDS    114
-#define BRIGHTNESS  64 //took brightness down by 32 PG
+#define BRIGHTNESS  32 //took brightness down by 32 PG
 #define UPDATES_PER_SECOND 100
+#define BLENDING LINEARBLEND
 CRGBPalette16 currentPalette; //assign before palette color grabbing
 TBlendType    currentBlending;
 
 CRGB leds[NUM_LEDS];
 
 /** generic agent population variables **/
-#define NUM_AGENTS 30
+#define NUM_AGENTS 60
 uint8_t agents_here[NUM_LEDS];
 Agent agents[NUM_AGENTS];
 
 /** Agent Clock Variables **/
 uint8_t clock_agents_here[NUM_LEDS];
 // start with moody arlene + deki clock
-AgentClock aclock(darkpurples, blues, greens, NUM_LEDS, clock_agents_here, currentBlending, BRIGHTNESS);
+AgentClock aclock(darkpurples, blues, greens, NUM_LEDS, clock_agents_here, BLENDING, BRIGHTNESS);
 CRGBPalette16 bgpalette = adbasic;
+uint8_t clocktype = 0; //goth clock = 0; arlene clock = 1
+
+/**Binary Clock Variables **/
+BinaryClock bclock(CRGB::White, CRGB::Black, BLENDING,BRIGHTNESS);
 
 
 void setup() {
@@ -65,7 +71,7 @@ void setup() {
   {
    
     uint8_t pos = random(1, NUM_LEDS);
-    agents[i].initagent(ColorFromPalette(adbasic, random(1,255)), pos, 0);
+    agents[i].initagent(ColorFromPalette(adbasic, random(1,255)), pos, random(1,10));
     agents_here[pos] ++;
   }
 
@@ -73,31 +79,58 @@ void setup() {
 
 void loop()
 {
-  /**Example, moving an drawing agents **/
-//  move_agents(agents, agents_here);
-//  draw_agents(agents, agents_here);
 
   /** PG: I can't decide how I want to switch between the different agent clocks at this point. 
-   *  but they work 
+   *  hacked together a thingie to make it switch between different effects. 
    */
-  aclock.drawagentclock(clock_agents_here, leds, 1, bgpalette);
+   static uint8_t start_index = 0; 
 
-  if(minute()%2 ==0)
-    switchclock();
-    
-  FastLED.show(); 
-  FastLED.delay(1000 / UPDATES_PER_SECOND);
+   uint8_t r = random(1,30);
+  if(r<10)
+  { //do agent clock.
+     for(int i = 0 ; i < UPDATES_PER_SECOND * 10; i++)
+     {
+      start_index++;
+      aclock.drawagentclock(clock_agents_here, leds, 1, bgpalette, start_index);
+       FastLED.show(); 
+       FastLED.delay(1000 / UPDATES_PER_SECOND);
+     } 
+     
+    switchclock(); //switch palette so next time clock colors are diff.
+  }
+  else if(r<20)
+  {
+        for(int i = 0 ; i < UPDATES_PER_SECOND * 10; i++)
+        {
+          start_index++;
+          bclock.drawbinaryclock(leds, adbasic, start_index, NUM_LEDS);
+          FastLED.show(); 
+          FastLED.delay(1000 / UPDATES_PER_SECOND);
+        }
+  }
+  else
+  { //just draw some agents.
+        for(int i = 0 ; i < UPDATES_PER_SECOND * 10; i++)
+        {
+          move_agents(agents, agents_here);
+          draw_agents(agents, agents_here);
+          FastLED.show(); 
+          FastLED.delay(1000 / UPDATES_PER_SECOND);
+        }
+  }
+
 
 }
 
 void switchclock()
 {
-  if(bgpalette == adbasic) //go from gothy to Arlene clock
+  if(clocktype==0) //go from gothy to Arlene clock
   {
     aclock.sec_palette = pinks;
     aclock.min_palette = yellows;
     aclock.hour_palette = whites;
     bgpalette = abasic;
+    clocktype=1;
   }
   else //arlene to gothy clock
     {
@@ -105,7 +138,10 @@ void switchclock()
     aclock.min_palette = blues;
     aclock.hour_palette = greens;
     bgpalette = adbasic;
+    clocktype = 0;
   }
+
+  aclock.recoloragents();
   
 }
 void move_agents(Agent p_agents[], uint8_t p_agents_here[])
@@ -131,77 +167,10 @@ void draw_agents(Agent p_agents[], uint8_t p_agents_here[])
 }
 
 
-
-/******************* START BINARY CLOCK FUNCTIONS *******************/
-/**
- * Plots time using binary numbers repeating over the strip
- * Currently reads time from start of code.
- * TODO: get real time data.
- * TODO: see if this is too dislexic
- * shows second-minute-hour (L->R)
- * MSB is on RHS vs. LHS. Debate/change later.
+/*** BEGINNINGS OF FRACTIONAL CLOCK START HERE ...
+ *  ... it ended up being pretty slow/less interesting to look at. 
+ *  maybe can be salvaged 
  */
-void plotBinTime(uint8_t palette_index)
-{
-  int curr_index = 0;
-
-  while (curr_index < NUM_LEDS)
-  {
-    plotNumber(second(), curr_index, 6,
-               ColorFromPalette( purplegreen, palette_index, BRIGHTNESS, currentBlending),
-               ColorFromPalette( greenpurple, palette_index, BRIGHTNESS, currentBlending));
-    curr_index += 6;
-
-    plotNumber(minute(), curr_index, 6, CRGB::Lime, CRGB::BlueViolet);
-    curr_index += 6;
-    plotNumber(hour(), curr_index, 4, CRGB::DarkViolet, CRGB::Chartreuse);
-    curr_index += 4;
-  }
-}
-//plot the time with 'one' values as black and leave other values alone
-void plotNegBinTime()
-{
-  int curr_index = 0;
-
-  while (curr_index < NUM_LEDS)
-  {
-    plotNumber(second(), curr_index, 6,
-               CRGB::Black);
-    curr_index += 6;
-
-    plotNumber(minute(), curr_index, 6, CRGB::Black);
-    curr_index += 6;
-    plotNumber(hour(), curr_index, 4, CRGB::Black);
-    curr_index += 4;
-  }
-}
-void plotNumber(int num, int start_index, int num_bits, CRGB one, CRGB zero)
-{
-  for (int i = num_bits - 1; i >= 0; i--)
-  {
-    if ((num >> i) & 0x01)
-      leds[start_index + i] = one;
-    else
-    {
-
-      leds[start_index + i] = zero;
-    }
-  }
-
-}
-//same as prev but doesn't plot 0's
-void plotNumber(int num, int start_index, int num_bits, CRGB one)
-{
-  for (int i = num_bits - 1; i >= 0; i--)
-  {
-    if ((num >> i) & 0x01)
-      leds[start_index + i] = one;
-
-  }
-
-
-}
-/******************* END BINARY CLOCK FUNCTIONS *******************/
 
 /** Plot time as seconds,minutes,hours.
  *  fractional divided by 2 (ie., renormalize seconds, minutes by 30 and hours by 12 instead of 24)
@@ -234,6 +203,8 @@ void plotXofY(int start_index, int num_on, int num_bits, CRGB one, CRGB zero)
       leds[start_index + i] = zero;
   }
 }
+
+/***** OLD CODE *****/
 void FillLEDsFromPaletteColors( uint8_t colorIndex)
 {
   uint8_t brightness = BRIGHTNESS;
@@ -295,98 +266,6 @@ void ChangePalettePeriodically()
 
 
 
-
-
-
-
-/****
- * Basic, initialize an agent that just has a color
- */
-/*void init_agent(struct agent_s* toinit, CRGB color1, int16_t posi, uint8_t dir, uint8_t maxw, void *fptr)
-{
-  toinit->color1 = color1;
-  toinit->pos = posi;
-  agents_here[posi]++;
-  toinit->dir = dir;
-  toinit->waited = 0;
-  toinit->max_wait = maxw;
-  toinit->span = 1;
-  toinit->agent_type = AGENT_CLASSIC;
-
-
-}
-
-/*
-void reverse_agent_dir(struct agent_s* toset)
-{
-  toset->dir = -toset->dir;
-}
-
-void set_agent_dir(struct agent_s* toset, int8_t dir)
-{
-  toset->dir = dir;
-}
-
-void set_agent_type(struct agent_s* toset, uint8_t atype)
-{
-  toset->agent_type = atype;
-}
-
-void set_agent_span(struct agent_s* toset, uint8_t span)
-{
-  toset->span = span;
-}
-
-void set_agent_pos(struct agent_s* toset, int16_t pos)
-{
-  toset->pos = pos;
-}
-
-*/
-
-
-/*void move_agents()
-{
-  for (int i = 0; i < NUM_AGENTS; i++)
-    move_agent(&agents[i]);
-
-}
-
-void move_agent(struct agent_s* toupdate)
-{
-  if (toupdate->waited == toupdate->max_wait)
-  {
-    agents_here[toupdate->pos]--;
-    toupdate->pos += toupdate->dir;
-    while (toupdate->pos < 0)
-      toupdate->pos += NUM_LEDS;
-    toupdate->pos %= NUM_LEDS;
-    agents_here[toupdate->pos]++;
-    /* collision detection. may or may not work */
-
-    /*for (int i = 0; i < NUM_AGENTS; i++)
-    {
-
-      if (agents[i].pos == toupdate->pos && (sameDirection(&agents[i], toupdate) ))
-      {
-        toupdate->dir *= -1;
-        agents_here[toupdate->pos]--;
-        toupdate->pos = (toupdate->pos + 1) % NUM_LEDS;
-        agents_here[toupdate->pos]++;
-      }
-    }
-    */
-  /*  toupdate->waited = 0;
-  }
-  else
-    toupdate->waited++;
-}
-
-boolean sameDirection(struct agent_s* a, struct agent_s* b)
-{
-  return ~(0x80 & (a->dir ^ b->dir));
-}
-*/
 
 
 

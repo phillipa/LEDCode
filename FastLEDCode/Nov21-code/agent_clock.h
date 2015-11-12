@@ -13,7 +13,8 @@ class AgentClock
   public:
      AgentClock(CRGBPalette16 p_sec_palette, CRGBPalette16 p_min_palette, CRGBPalette16 p_hour_palette, 
                    uint16_t p_num_leds, uint8_t p_agents_here[], TBlendType p_blending, uint8_t p_brightness);
-     void drawagentclock(uint8_t agents_here[], CRGB leds[], boolean stealth, CRGBPalette16 bgpalette);
+     void drawagentclock(uint8_t agents_here[], CRGB leds[], boolean stealth, CRGBPalette16 bgpalette, uint8_t start_index);
+     void recoloragents();
      CRGBPalette16 sec_palette;
      CRGBPalette16 min_palette;
      CRGBPalette16 hour_palette; 
@@ -30,5 +31,6 @@ class AgentClock
      void updateagents(uint8_t live, Agent agents[], uint8_t agents_here[], 
                                 CRGBPalette16 palette, uint8_t max_i);
     void drawagents(CRGB leds[], Agent agents[], uint8_t max_i);
-  
+    void updateagentscolor(uint8_t live, Agent agents[], 
+                                CRGBPalette16 palette, uint8_t max_i);
 };
