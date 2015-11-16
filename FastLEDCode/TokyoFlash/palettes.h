@@ -38,9 +38,9 @@ CRGB white = CRGB::White;
 //basic set of colors, reasonably bright
 CRGBPalette16 adbasic = CRGBPalette16(
                                    purepurple,  purepurple,  purepurple ,  purepurple,
-                                   blue, blue, blue,  CRGB::Chartreuse,
+                                   blue, blue, blue,  green,
                                    green,  purepurple,  purepurple,  purepurple,
-                                   blue, blue, darkmagenta,  darkmagenta );
+                                   blue, blue, green,  green );
 CRGBPalette16 abasic = CRGBPalette16( 0xca226b,0xca226b,0xca226b,0xca226b,
                                   0xf660ab,0xf660ab,0xf660ab,0xfff380,
                                   0xfff380,0xca226b,0xca226b,0xca226b,

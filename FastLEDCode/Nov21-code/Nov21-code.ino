@@ -22,8 +22,8 @@
 
 //other definitions
 #define DATA_PIN     17
-#define NUM_LEDS    114
-#define BRIGHTNESS  32 //took brightness down by 32 PG
+#define NUM_LEDS    478
+#define BRIGHTNESS  64 //took brightness down by 32 PG
 #define UPDATES_PER_SECOND 100
 #define BLENDING LINEARBLEND
 CRGBPalette16 currentPalette; //assign before palette color grabbing
@@ -77,6 +77,7 @@ void setup() {
 
 }
 
+ uint8_t r ;
 void loop()
 {
 
@@ -85,9 +86,15 @@ void loop()
    */
    static uint8_t start_index = 0; 
 
-   uint8_t r = random(1,30);
-  if(r<10)
-  { //do agent clock.
+    r = random(1,30);
+
+    start_index++;
+          
+          FastLED.show(); 
+          FastLED.delay(1000 / UPDATES_PER_SECOND);
+  
+ // if(r<10)
+//  { //do agent clock.
      for(int i = 0 ; i < UPDATES_PER_SECOND * 10; i++)
      {
       start_index++;
@@ -97,9 +104,9 @@ void loop()
      } 
      
     switchclock(); //switch palette so next time clock colors are diff.
-  }
-  else if(r<20)
-  {
+ // }
+//  else if(r<20)
+ // {
         for(int i = 0 ; i < UPDATES_PER_SECOND * 10; i++)
         {
           start_index++;
@@ -107,9 +114,9 @@ void loop()
           FastLED.show(); 
           FastLED.delay(1000 / UPDATES_PER_SECOND);
         }
-  }
-  else
-  { //just draw some agents.
+ // }
+ // else
+ // { //just draw some agents.
         for(int i = 0 ; i < UPDATES_PER_SECOND * 10; i++)
         {
           move_agents(agents, agents_here);
@@ -117,7 +124,7 @@ void loop()
           FastLED.show(); 
           FastLED.delay(1000 / UPDATES_PER_SECOND);
         }
-  }
+//  }
 
 
 }

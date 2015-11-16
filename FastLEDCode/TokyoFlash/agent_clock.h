@@ -6,7 +6,11 @@
 #include <Time.h>
 
 
-#define SECMIN 60 //temp variable to scale down seconds/mins for testing
+#define SECMIN 16 //temp variable to scale down seconds/mins for testing
+
+#define HOURLEDS 12
+#define MINLEDS 16
+#define SECLEDS 24
 
 class AgentClock 
 {
@@ -25,7 +29,7 @@ class AgentClock
      Agent sec_agents[SECMIN];
      Agent min_agents[SECMIN];
      //this one is not scaled down
-     Agent hour_agents[24];
+     Agent hour_agents[12];
      TBlendType    blending;
      uint8_t brightness;
      void updateagents(uint8_t live, Agent agents[], uint8_t agents_here[], 

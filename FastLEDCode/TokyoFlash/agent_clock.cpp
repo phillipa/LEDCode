@@ -30,36 +30,43 @@ AgentClock::AgentClock(CRGBPalette16 p_sec_palette, CRGBPalette16 p_min_palette,
   //init the agents
   for(int i = 0; i < SECMIN; i++)
   { 
-    pos = random(1, num_leds);
-    sec_agents[i].initagent(ColorFromPalette(sec_palette, random(1,255)), pos, 2);
+    pos = random(1, SECLEDS);
+    sec_agents[i].initagent(ColorFromPalette(sec_palette, random(1,255)), pos, 2,0,SECLEDS);
     p_agents_here[pos] ++;
-    pos = random(1, num_leds);
-    min_agents[i].initagent(ColorFromPalette(min_palette, random(1,255)), pos, 4);
+    pos = random(SECLEDS, SECLEDS+MINLEDS);
+    min_agents[i].initagent(ColorFromPalette(min_palette, random(1,255)), pos, 4, SECLEDS,SECLEDS+MINLEDS);
     p_agents_here[pos] ++;
   }
-  for(int i = 0; i < 24; i++)
+  for(int i = 0; i < 12; i++)
   {
-    pos = random(1, num_leds);
-    hour_agents[i].initagent(ColorFromPalette(hour_palette, random(1,255)), pos, 8);
+    pos = random(SECLEDS+MINLEDS, SECLEDS+MINLEDS+HOURLEDS);
+    hour_agents[i].initagent(ColorFromPalette(hour_palette, random(1,255)), pos, 8,SECLEDS+MINLEDS, SECLEDS+MINLEDS+HOURLEDS);
     p_agents_here[pos] ++;
   }
 }
 
 void AgentClock::drawagentclock(uint8_t agents_here[], CRGB leds[], boolean stealth, CRGBPalette16 bgpalette, uint16_t start_index)
 {
-  uint8_t seconds = second() >> 1;
+ /* uint8_t seconds = second() >> 1;
   uint8_t minutes = minute() >> 1;
   uint8_t hours = hour(); //don't divide hour by 2
-
+*/
+ uint8_t seconds = (second() * SECLEDS) / 60;
+  uint8_t minutes = (minute() * MINLEDS) / 60 ;
+  if(minute() > 0 && minutes < 1)
+    minutes = 1;
+  uint8_t hours = (hour()+1) >> 2; // hour is 1-12
+   if(hour() > 0  && hours < 1)
+    hours = 1;
   //update agent colorings and move them as required 
   updateagents(seconds, sec_agents,agents_here, sec_palette,SECMIN);
   updateagents(minutes, min_agents,agents_here, min_palette,SECMIN);
-  updateagents(hours, hour_agents,agents_here, hour_palette,24);
+  updateagents(hours, hour_agents,agents_here, hour_palette,12);
 
   //draw the agents.
   drawagents(leds, sec_agents, SECMIN);
   drawagents(leds, min_agents, SECMIN);
-  drawagents(leds, hour_agents, 24);
+  drawagents(leds, hour_agents, 12);
 
   
   //draw the background
@@ -106,7 +113,7 @@ void AgentClock::recoloragents()
 
    updateagentscolor(seconds, sec_agents, sec_palette, SECMIN);
    updateagentscolor(minutes, min_agents, min_palette, SECMIN);
-   updateagentscolor(hours, hour_agents, hour_palette, 24);
+   updateagentscolor(hours, hour_agents, hour_palette, 12);
 }
 
 void AgentClock::updateagentscolor(uint8_t live, Agent agents[], 
