@@ -41,6 +41,8 @@ CRGBPalette16 adbasic = CRGBPalette16(
                                    blue, blue, blue,  CRGB::Chartreuse,
                                    green,  purepurple,  purepurple,  purepurple,
                                    blue, blue, darkmagenta,  darkmagenta );
+
+                                   
 CRGBPalette16 abasic = CRGBPalette16( 0xca226b,0xca226b,0xca226b,0xca226b,
                                   0xf660ab,0xf660ab,0xf660ab,0xfff380,
                                   0xfff380,0xca226b,0xca226b,0xca226b,

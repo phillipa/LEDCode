@@ -6,7 +6,7 @@
 #include <Time.h>
 
 
-#define SECMIN 60 //temp variable to scale down seconds/mins for testing
+#define SECMIN 30 //temp variable to scale down seconds/mins for testing
 
 class AgentClock 
 {

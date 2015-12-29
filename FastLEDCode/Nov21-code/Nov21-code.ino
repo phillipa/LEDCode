@@ -17,13 +17,14 @@
 #include "agent_clock.h"
 #include "ad_palettes.h"
 #include "binary_clock.h"
+#include "spark.h"
 
 
 
 //other definitions
 #define DATA_PIN     17
 #define NUM_LEDS    478
-#define BRIGHTNESS  64 //took brightness down by 32 PG
+#define BRIGHTNESS  128 //took brightness down by 32 PG
 #define UPDATES_PER_SECOND 100
 #define BLENDING LINEARBLEND
 CRGBPalette16 currentPalette; //assign before palette color grabbing
@@ -35,6 +36,11 @@ CRGB leds[NUM_LEDS];
 #define NUM_AGENTS 60
 uint8_t agents_here[NUM_LEDS];
 Agent agents[NUM_AGENTS];
+
+/** generic spark population variables **/
+#define NUM_SPARKS 80
+Spark sparks[NUM_SPARKS];
+
 
 /** Agent Clock Variables **/
 uint8_t clock_agents_here[NUM_LEDS];
@@ -53,11 +59,14 @@ void setup() {
   delay( 3000 ); // power-up safety delay
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
   FastLED.setBrightness(  BRIGHTNESS );
-  for (int i = 0; i < NUM_LEDS; i++) //make them all black
+  for (int i = 0; i < NUM_LEDS; i++) //make them all red so we can tell it rebooted
     leds[i] = CRGB::Red;
   FastLED.show();
   delay(2000);//show red for 2 secs so i know it rebooted.
+  for (int i = 0; i < NUM_LEDS; i++) //make them all black
+    leds[i] = CRGB::Black;
 
+    
   //set up random numbers
   randomSeed(analogRead(0));
   randomSeed(analogRead(random(0, 7)));
@@ -69,32 +78,65 @@ void setup() {
     agents_here[i]=0;
   for (int i = 0; i < NUM_AGENTS; i++)
   {
-   
     uint8_t pos = random(1, NUM_LEDS);
     agents[i].initagent(ColorFromPalette(adbasic, random(1,255)), pos, random(1,10));
     agents_here[pos] ++;
   }
+  
+  for (int i = 0; i < NUM_SPARKS; i++)
+  {
+    uint8_t pos = random(1, NUM_LEDS);
+    sparks[i].initspark(ColorFromPalette(whites,random(1,255)), pos,  random(1,10), random(20,50));
+    
+  }
 
 }
 
+void draw_sparks(Spark p_sparks[])
+{
+  for(int i = 0; i < NUM_SPARKS; i++)
+  {
+    leds[p_sparks[i].pos] = p_sparks[i].color;
+    p_sparks[i].fade();
+  }
+  
+}
+
+
  uint8_t r ;
+static CRGB color = ColorFromPalette(adbasic, random(1,255));
 void loop()
 {
 
+  
+  FastLED.show(); 
+  FastLED.delay(1000 / UPDATES_PER_SECOND);
+
+draw_sparks(sparks);
+
+
+
+}
+
+
+
+
+//run through different things for 10 seconds each.
+void ArleneDekiBasicMode()
+{
   /** PG: I can't decide how I want to switch between the different agent clocks at this point. 
    *  hacked together a thingie to make it switch between different effects. 
    */
    static uint8_t start_index = 0; 
 
-    r = random(1,30);
+  r = random(1,30);
 
-    start_index++;
-          
-          FastLED.show(); 
-          FastLED.delay(1000 / UPDATES_PER_SECOND);
+  start_index++;
+        
+  FastLED.show(); 
+  FastLED.delay(1000 / UPDATES_PER_SECOND);
   
- // if(r<10)
-//  { //do agent clock.
+//Agent Clock
      for(int i = 0 ; i < UPDATES_PER_SECOND * 10; i++)
      {
       start_index++;
@@ -104,9 +146,8 @@ void loop()
      } 
      
     switchclock(); //switch palette so next time clock colors are diff.
- // }
-//  else if(r<20)
- // {
+
+//Binary Clock
         for(int i = 0 ; i < UPDATES_PER_SECOND * 10; i++)
         {
           start_index++;
@@ -114,9 +155,8 @@ void loop()
           FastLED.show(); 
           FastLED.delay(1000 / UPDATES_PER_SECOND);
         }
- // }
- // else
- // { //just draw some agents.
+
+//Random Agents
         for(int i = 0 ; i < UPDATES_PER_SECOND * 10; i++)
         {
           move_agents(agents, agents_here);
@@ -124,9 +164,6 @@ void loop()
           FastLED.show(); 
           FastLED.delay(1000 / UPDATES_PER_SECOND);
         }
-//  }
-
-
 }
 
 void switchclock()
@@ -151,6 +188,8 @@ void switchclock()
   aclock.recoloragents();
   
 }
+
+
 void move_agents(Agent p_agents[], uint8_t p_agents_here[])
 {
   for(int i = 0; i < NUM_AGENTS; i++)
@@ -159,6 +198,8 @@ void move_agents(Agent p_agents[], uint8_t p_agents_here[])
   }
 
 }
+
+
 
 void draw_agents(Agent p_agents[], uint8_t p_agents_here[])
 {
