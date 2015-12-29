@@ -112,7 +112,7 @@ void loop()
   FastLED.show(); 
   FastLED.delay(1000 / UPDATES_PER_SECOND);
 
-draw_sparks(sparks);
+ArleneDekiBasicMode();
 
 
 
@@ -163,6 +163,15 @@ void ArleneDekiBasicMode()
           draw_agents(agents, agents_here);
           FastLED.show(); 
           FastLED.delay(1000 / UPDATES_PER_SECOND);
+        }
+
+   for(int i = 0 ; i < UPDATES_PER_SECOND * 10; i++)
+        {
+         
+draw_sparks(sparks);
+ FastLED.show(); 
+  FastLED.delay(1000 / UPDATES_PER_SECOND);
+
         }
 }
 
