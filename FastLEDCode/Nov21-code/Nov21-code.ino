@@ -17,15 +17,17 @@
 #include "agent_clock.h"
 #include "ad_palettes.h"
 #include "binary_clock.h"
+#include "fatagent.h"
 #include "spark.h"
+
 
 
 
 //other definitions
 #define DATA_PIN     17
-#define NUM_LEDS    478
-#define BRIGHTNESS  128 //took brightness down by 32 PG
-#define UPDATES_PER_SECOND 100
+#define NUM_LEDS    114
+#define BRIGHTNESS  64 //took brightness down by 32 PG
+#define UPDATES_PER_SECOND 60
 #define BLENDING LINEARBLEND
 CRGBPalette16 currentPalette; //assign before palette color grabbing
 TBlendType    currentBlending;
@@ -38,9 +40,14 @@ uint8_t agents_here[NUM_LEDS];
 Agent agents[NUM_AGENTS];
 
 /** generic spark population variables **/
-#define NUM_SPARKS 80
+#define NUM_SPARKS 70
 Spark sparks[NUM_SPARKS];
+uint8_t sparkcol_idx = 1;
+CRGBPalette16 sparkpalette = bluespurples;
 
+/** FatAgents **/ 
+#define NUM_FAT_AGENTS 16
+FatAgent fatagents[NUM_FAT_AGENTS];
 
 /** Agent Clock Variables **/
 uint8_t clock_agents_here[NUM_LEDS];
@@ -60,7 +67,7 @@ void setup() {
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
   FastLED.setBrightness(  BRIGHTNESS );
   for (int i = 0; i < NUM_LEDS; i++) //make them all red so we can tell it rebooted
-    leds[i] = CRGB::Red;
+    leds[i] = CRGB::Purple;
   FastLED.show();
   delay(2000);//show red for 2 secs so i know it rebooted.
   for (int i = 0; i < NUM_LEDS; i++) //make them all black
@@ -86,12 +93,21 @@ void setup() {
   for (int i = 0; i < NUM_SPARKS; i++)
   {
     uint8_t pos = random(1, NUM_LEDS);
-    sparks[i].initspark(ColorFromPalette(whites,random(1,255)), pos,  random(1,10), random(20,50));
-    
+    sparks[i].initspark(ColorFromPalette(sparkpalette,sparkcol_idx), pos,  random(1,10), random(5,15));
+  }
+
+  for (int i = 0; i < NUM_FAT_AGENTS; i++)
+  {  
+    uint8_t pos = random(0, NUM_LEDS);
+   
+    fatagents[i].initagent(ColorFromPalette(adbasic,random(1,255)), pos, random(1,4));
+    fatagents[i].setspan(random(4,8));
+    fatagents[i].dir=-1;//make them go the same way.
   }
 
 }
 
+/**** Junk that should be after loop(), or put somewhere else but isn't yet ***/
 void draw_sparks(Spark p_sparks[])
 {
   for(int i = 0; i < NUM_SPARKS; i++)
@@ -102,23 +118,91 @@ void draw_sparks(Spark p_sparks[])
   
 }
 
+void move_fatagents(FatAgent p_fatagents[])
+{
+  for(int i = 0; i < NUM_FAT_AGENTS; i++)
+  {
+    p_fatagents[i].move(NULL, NUM_LEDS);
+  }
+
+}
+
+void draw_fatagents(FatAgent p_fatagents[])
+{
+  for(int i = 0; i < NUM_FAT_AGENTS; i++)
+  {
+     p_fatagents[i].draw(leds, NUM_LEDS);
+  }
+}
+
+void clear_fatagents()
+{
+  memset(leds,0,3*NUM_LEDS);
+}
+
+
 
  uint8_t r ;
 static CRGB color = ColorFromPalette(adbasic, random(1,255));
 void loop()
 {
 
-  
-  FastLED.show(); 
-  FastLED.delay(1000 / UPDATES_PER_SECOND);
 
-ArleneDekiBasicMode();
 
+      
+  // ArleneDekiBasicMode();
+NewYearsEve();
 
 
 }
 
 
+void NewYearsEve()
+{
+
+  //do this for 1 min
+  /*reset agent colors*/
+  for(int i = 0; i < NUM_FAT_AGENTS; i++)
+  {
+    fatagents[i].color=ColorFromPalette(adbasic,random(1,255));
+    fatagents[i].pos = random(1,NUM_LEDS);
+    fatagents[i].setspan(random(4,8));
+  }
+  for(int i = 0 ; i < UPDATES_PER_SECOND * 60; i++)
+  {
+  
+    move_fatagents(fatagents);
+    clear_fatagents();
+    draw_fatagents(fatagents);
+    FastLED.show(); 
+    FastLED.delay(1000 / UPDATES_PER_SECOND);
+  } 
+  
+  int num_intervals = 0;
+  while(num_intervals <= 75) //do 300 seconds (5 min) of twinkle
+  {
+    for(int i = 0 ; i < UPDATES_PER_SECOND * 5; i++)
+    {
+      draw_sparks(sparks);
+      FastLED.show(); 
+      FastLED.delay(1000 / UPDATES_PER_SECOND);
+    }
+    //update spark colors
+    sparkcol_idx+=3;
+    if(sparkcol_idx >= 250)
+      sparkcol_idx=0;
+    for(int i = 0; i < NUM_SPARKS;i++)
+    {
+      sparks[i].initspark(ColorFromPalette(sparkpalette,sparkcol_idx + random(1,10)), random(1,NUM_LEDS),  random(1,20), random(5,15));
+    }
+
+    num_intervals++;
+  }
+
+  
+    
+    
+}
 
 
 //run through different things for 10 seconds each.

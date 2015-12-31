@@ -64,6 +64,15 @@ CRGBPalette16 darkpurples = CRGBPalette16(
                                     darkmagenta, darkmagenta, darkorchid, darkorchid,
                                     darkviolet, darkviolet, blueviolet, blueviolet);
 
+CRGBPalette16 bluespurples = CRGBPalette16(
+                                  darkmagenta,  blue, blueviolet, bluejay ,
+                                  darkviolet, 
+                                 navyblue, darkorchid,   lapisblue, darkorchid, cornflowerblue,
+                                   darkviolet,  cobaltblue, darkmagenta, blueorchid,
+                                   blueviolet, earthblue
+                                 
+                                  );
+
 CRGBPalette16 blues = CRGBPalette16(
                                     blue, blue, bluejay, bluejay,
                                     navyblue, navyblue, lapisblue, lapisblue,
