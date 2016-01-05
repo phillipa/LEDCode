@@ -5,6 +5,8 @@
 #include <avr/power.h>
 #include <stdint.h>
 
+#define CTYPE_CRGB 0
+
 class FatAgent 
 {
   public:
